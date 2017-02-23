@@ -1,0 +1,15 @@
+[package]
+name = "chronicle"
+version = "0.1.0"
+authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
+publish = false
+
+[workspace]
+members = [
+    "chronicle_persistence",
+    "chronicle_commander",
+    "chronicle_memory",
+    "examples/bank",
+]
+
+[dependencies]

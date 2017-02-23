@@ -1,0 +1,8 @@
+[package]
+name = "chronicle_memory"
+version = "0.1.0"
+authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
+
+[dependencies]
+chashmap = "2.0.0"
+chronicle_persistence = { version = "0.1.0", path = "../chronicle_persistence" }
