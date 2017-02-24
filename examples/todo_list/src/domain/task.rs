@@ -8,20 +8,28 @@ pub enum Event {
     Archive,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone)]
 pub enum Command {
-    Create { description: String },
-    ChangeDescription { description: String },
-    Complete,
-    Archive,
+    Created { description: String },
+    DescriptionChanged { description: String },
+    Completed,
+    Archived,
 }
 
 #[derive(Debug, Clone)]
 pub enum ValidationError {}
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone)]
+pub enum Status {
+    Active,
+    Completed,
+    Archived,
+}
+
+#[derive(Debug, Clone)]
 pub struct State {
     pub description: String,
+    pub status: Status,
 }
 
 pub struct Task;

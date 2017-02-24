@@ -19,7 +19,7 @@ pub enum Event {
     AccountClosed,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone)]
 pub enum Command {
     OpenAccount { initial_balance: Money },
     DepositMoney { transfer_id: String, amount: Money },
@@ -30,16 +30,16 @@ pub enum Command {
 #[derive(Debug, Clone)]
 pub enum ValidationError {}
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum AccountState {
+#[derive(Debug, Clone)]
+pub enum Status {
     Active,
     Closed,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone)]
 pub struct State {
     pub balance: Money,
-    pub state: AccountState,
+    pub status: Status,
 }
 
 pub struct Account;

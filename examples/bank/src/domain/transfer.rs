@@ -11,7 +11,7 @@ pub enum Event {
     },
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone)]
 pub enum Command {
     TransferMoney {
         debit_account: String,
@@ -23,23 +23,23 @@ pub enum Command {
 #[derive(Debug, Clone)]
 pub enum ValidationError {}
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum TransferState {
+#[derive(Debug, Clone)]
+pub enum Status {
     Requested,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone)]
 pub struct State {
     pub transfer_uuid: String,
     pub debit_account: String,
     pub credit_account: String,
     pub amount: Money,
-    pub state: TransferState,
+    pub state: Status,
 }
 
-pub struct TransferAggregate;
+pub struct Transfer;
 
-impl Aggregate for TransferAggregate {
+impl Aggregate for Transfer {
     type State = Option<State>;
     type Event = Event;
     type Command = Command;
