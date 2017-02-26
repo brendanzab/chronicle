@@ -1,4 +1,5 @@
 use chronicle_commander::Aggregate;
+use futures::future::FutureResult;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum Event {
@@ -39,18 +40,19 @@ impl Aggregate for Task {
     type Event = Event;
     type Command = Command;
     type ValidationError = ValidationError;
+    type EventsFuture = FutureResult<Vec<Event>, ValidationError>;
 
     fn initial_state() -> Option<State> {
         None
     }
 
-    fn apply_event(_state: &mut Option<State>, _command: Event) {
+    fn handle_command(_state: &Option<State>,
+                      _command: Command)
+                      -> FutureResult<Vec<Event>, ValidationError> {
         unimplemented!()
     }
 
-    fn handle_command(_state: &Option<State>,
-                      _command: Command)
-                      -> Result<Vec<Event>, ValidationError> {
+    fn apply_event(_state: &mut Option<State>, _command: Event) {
         unimplemented!()
     }
 }
