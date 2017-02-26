@@ -18,7 +18,7 @@ pub enum Command {
 }
 
 #[derive(Debug, Clone)]
-pub enum ValidationError {}
+pub enum CommandError {}
 
 #[derive(Debug, Clone)]
 pub enum Status {
@@ -39,8 +39,8 @@ impl Aggregate for Task {
     type State = Option<State>;
     type Event = Event;
     type Command = Command;
-    type ValidationError = ValidationError;
-    type EventsFuture = FutureResult<Vec<Event>, ValidationError>;
+    type CommandError = CommandError;
+    type EventsFuture = FutureResult<Vec<Event>, CommandError>;
 
     fn initial_state() -> Option<State> {
         None
@@ -48,7 +48,7 @@ impl Aggregate for Task {
 
     fn handle_command(_state: &Option<State>,
                       _command: Command)
-                      -> FutureResult<Vec<Event>, ValidationError> {
+                      -> FutureResult<Vec<Event>, CommandError> {
         unimplemented!()
     }
 
