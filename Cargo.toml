@@ -10,6 +10,7 @@ members = [
     "chronicle_commander",
     "chronicle_memory",
     "examples/bank",
+    "examples/counter",
     "examples/todo_list",
 ]
 

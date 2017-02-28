@@ -1,0 +1,10 @@
+[package]
+name = "counter_example"
+version = "0.1.0"
+authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
+publish = false
+
+[dependencies]
+chronicle_commander = { version = "0.1.0", path = "../../chronicle_commander" }
+chronicle_memory = { version = "0.1.0", path = "../../chronicle_memory" }
+futures = "0.1.10"
