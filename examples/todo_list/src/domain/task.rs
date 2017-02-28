@@ -1,36 +1,48 @@
 use chronicle_commander::Aggregate;
-use futures::future::FutureResult;
+use futures::future::{self, FutureResult};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum Event {
-    Create { description: String },
-    ChangeDescription { description: String },
-    Complete,
-    Archive,
-}
-
-#[derive(Debug, Clone)]
-pub enum Command {
     Created { description: String },
     DescriptionChanged { description: String },
     Completed,
     Archived,
 }
 
-#[derive(Debug, Clone)]
-pub enum CommandError {}
+#[derive(Debug, Clone, PartialEq)]
+pub enum Command {
+    Create(String),
+    ChangeDescription(String),
+    Complete,
+    Archive,
+}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommandError {
+    NotYetCreated,
+    AlreadyCreated,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Status {
     Active,
     Completed,
     Archived,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct State {
     pub description: String,
     pub status: Status,
+}
+
+impl State {
+    pub fn new(description: String, status: Status) -> State {
+        State {
+            description: description,
+            status: status,
+        }
+    }
 }
 
 pub struct Task;
@@ -46,13 +58,174 @@ impl Aggregate for Task {
         None
     }
 
-    fn handle_command(_state: &Option<State>,
-                      _command: Command)
+    fn handle_command(state: &Option<State>,
+                      command: Command)
                       -> FutureResult<Vec<Event>, CommandError> {
-        unimplemented!()
+        use self::Command::*;
+        use self::Event::*;
+
+        future::result(match *state {
+            None => {
+                match command {
+                    Create(description) => Ok(vec![Created { description: description }]),
+                    _ => Err(CommandError::NotYetCreated),
+                }
+            }
+            Some(ref state) => {
+                match command {
+                    Create(_) => Err(CommandError::AlreadyCreated),
+                    ChangeDescription(description) => {
+                        if description == state.description {
+                            Ok(vec![])
+                        } else {
+                            Ok(vec![DescriptionChanged { description: description }])
+                        }
+                    }
+                    Complete if state.status == Status::Completed => Ok(vec![]),
+                    Archive if state.status == Status::Archived => Ok(vec![]),
+                    Complete => Ok(vec![Event::Completed]),
+                    Archive => Ok(vec![Event::Archived]),
+                }
+            }
+        })
     }
 
-    fn apply_event(_state: &mut Option<State>, _command: Event) {
-        unimplemented!()
+    fn apply_event(state: &mut Option<State>, event: Event) {
+        use self::Event::*;
+
+        match *state {
+            None => {
+                match event {
+                    Created { description } => {
+                        *state = Some(State::new(description, Status::Active))
+                    }
+                    _ => (), // TODO: Log?
+                }
+            }
+            Some(ref mut state) => {
+                match event {
+                    Created { .. } => (), // TODO: Log?
+                    DescriptionChanged { description } => state.description = description,
+                    Completed => state.status = Status::Completed,
+                    Archived => state.status = Status::Archived,
+                }
+            }
+        }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chronicle_commander::Aggregate;
+    use futures::Future;
+
+    // TODO: These tests are very reptitive - would property based testing help?
+
+    #[test]
+    fn handles_initial_create() {
+        let command = Command::Create("hi".to_string());
+
+        assert_eq!(Task::handle_command(&None, command).wait(),
+                   Ok(vec![Event::Created { description: "hi".to_string() }]));
+    }
+
+    #[test]
+    fn handles_initial_change_description() {
+        let command = Command::ChangeDescription("hi".to_string());
+
+        assert_eq!(Task::handle_command(&None, command).wait(),
+                   Err(CommandError::NotYetCreated));
+    }
+
+    #[test]
+    fn handles_initial_completed() {
+        assert_eq!(Task::handle_command(&None, Command::Complete).wait(),
+                   Err(CommandError::NotYetCreated));
+    }
+
+    #[test]
+    fn handles_initial_archive() {
+        assert_eq!(Task::handle_command(&None, Command::Archive).wait(),
+                   Err(CommandError::NotYetCreated));
+    }
+
+    #[test]
+    fn handles_create() {
+        let state = State::new("hi".to_string(), Status::Active);
+        let command = Command::Create("yoho".to_string());
+
+        assert_eq!(Task::handle_command(&Some(state), command).wait(),
+                   Err(CommandError::AlreadyCreated));
+    }
+
+    #[test]
+    fn handles_change_description_if_different() {
+        let state = State::new("hi".to_string(), Status::Active);
+        let command = Command::ChangeDescription("yoho".to_string());
+
+        assert_eq!(Task::handle_command(&Some(state), command).wait(),
+                   Ok(vec![Event::DescriptionChanged { description: "yoho".to_string() }]));
+    }
+
+    #[test]
+    fn ignores_change_description_on_no_change() {
+        let state = State::new("hi".to_string(), Status::Active);
+        let command = Command::ChangeDescription("hi".to_string());
+
+        assert_eq!(Task::handle_command(&Some(state), command).wait(),
+                   Ok(vec![]));
+    }
+
+    #[test]
+    fn handles_complete_if_different() {
+        let state = State::new("hi".to_string(), Status::Active);
+
+        assert_eq!(Task::handle_command(&Some(state), Command::Complete).wait(),
+                   Ok(vec![Event::Completed]));
+    }
+
+    #[test]
+    fn ignores_complete_on_no_change() {
+        let state = State::new("hi".to_string(), Status::Completed);
+
+        assert_eq!(Task::handle_command(&Some(state), Command::Complete).wait(),
+                   Ok(vec![]));
+    }
+
+    #[test]
+    fn handles_archive_if_different() {
+        let state = State::new("hi".to_string(), Status::Active);
+
+        assert_eq!(Task::handle_command(&Some(state), Command::Archive).wait(),
+                   Ok(vec![Event::Archived]));
+    }
+
+    #[test]
+    fn ignores_archive_on_no_change() {
+        let state = State::new("hi".to_string(), Status::Archived);
+
+        assert_eq!(Task::handle_command(&Some(state), Command::Archive).wait(),
+                   Ok(vec![]));
+    }
+
+    #[test]
+    fn applies_initial_created() {
+        let mut state = None;
+        let event = Event::Created { description: "hi".to_string() };
+        Task::apply_event(&mut state, event);
+
+        assert_eq!(state, Some(State::new("hi".to_string(), Status::Active)));
+    }
+
+    #[test]
+    fn applies_created() {
+        let mut state = Some(State::new("hi".to_string(), Status::Active));
+        let event = Event::Created { description: "HELLO".to_string() };
+        Task::apply_event(&mut state, event);
+
+        assert_eq!(state, Some(State::new("hi".to_string(), Status::Active)));
+    }
+
+    // TODO: more tests?
 }
