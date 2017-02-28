@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 chronicle_commander = { version = "0.1.0", path = "../../chronicle_commander" }
 chronicle_memory = { version = "0.1.0", path = "../../chronicle_memory" }
-futures = "0.1.9"
+futures = "0.1.10"
 rocket = "0.2.0"
 rocket_codegen = "0.2.0"
 rocket_contrib = "0.2.0"
