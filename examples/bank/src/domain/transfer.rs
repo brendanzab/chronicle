@@ -4,6 +4,7 @@ use futures::future::FutureResult;
 use super::Money;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
     MoneyTransferRequested {
         debit_account: String,
