@@ -1,5 +1,4 @@
 use chronicle_commander::Aggregate;
-use futures::future::FutureResult;
 
 use super::Money;
 
@@ -46,7 +45,7 @@ impl Aggregate for Transfer {
     type Event = Event;
     type Command = Command;
     type CommandError = CommandError;
-    type EventsFuture = FutureResult<Vec<Event>, CommandError>;
+    type EventsFuture = Result<Vec<Event>, CommandError>;
 
     fn initial_state() -> Option<State> {
         None
@@ -54,7 +53,7 @@ impl Aggregate for Transfer {
 
     fn handle_command(_state: &Option<State>,
                       _command: Command)
-                      -> FutureResult<Vec<Event>, CommandError> {
+                      -> Result<Vec<Event>, CommandError> {
         unimplemented!()
     }
 

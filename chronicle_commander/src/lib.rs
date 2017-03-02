@@ -1,7 +1,7 @@
 extern crate chronicle_persistence;
 extern crate futures;
 
-use futures::Future;
+use futures::IntoFuture;
 
 /// An aggregate that is responsible for validating and applying
 /// commands.
@@ -33,7 +33,7 @@ pub trait Aggregate {
     type CommandError;
 
     /// A future that will be returned by the `handle_command` function.
-    type EventsFuture: Future<Item = Vec<Self::Event>, Error = Self::CommandError>;
+    type EventsFuture: IntoFuture<Item = Vec<Self::Event>, Error = Self::CommandError>;
 
     /// The seed state, before the aggregate has been created.
     fn initial_state() -> Self::State;

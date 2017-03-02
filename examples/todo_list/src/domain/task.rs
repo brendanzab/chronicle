@@ -1,5 +1,4 @@
 use chronicle_commander::Aggregate;
-use futures::future::{self, FutureResult};
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -53,19 +52,17 @@ impl Aggregate for Task {
     type Event = Event;
     type Command = Command;
     type CommandError = CommandError;
-    type EventsFuture = FutureResult<Vec<Event>, CommandError>;
+    type EventsFuture = Result<Vec<Event>, CommandError>;
 
     fn initial_state() -> Option<State> {
         None
     }
 
-    fn handle_command(state: &Option<State>,
-                      command: Command)
-                      -> FutureResult<Vec<Event>, CommandError> {
+    fn handle_command(state: &Option<State>, command: Command) -> Result<Vec<Event>, CommandError> {
         use self::Command::*;
         use self::Event::*;
 
-        future::result(match *state {
+        match *state {
             None => {
                 match command {
                     Create(description) => Ok(vec![Created { description: description }]),
@@ -88,7 +85,7 @@ impl Aggregate for Task {
                     Archive => Ok(vec![Event::Archived]),
                 }
             }
-        })
+        }
     }
 
     fn apply_event(state: &mut Option<State>, event: Event) {
@@ -119,7 +116,6 @@ impl Aggregate for Task {
 mod tests {
     use super::*;
     use chronicle_commander::Aggregate;
-    use futures::Future;
 
     // TODO: These tests are very reptitive - would property based testing help?
 
@@ -127,7 +123,7 @@ mod tests {
     fn handles_initial_create() {
         let command = Command::Create("hi".to_string());
 
-        assert_eq!(Task::handle_command(&None, command).wait(),
+        assert_eq!(Task::handle_command(&None, command),
                    Ok(vec![Event::Created { description: "hi".to_string() }]));
     }
 
@@ -135,19 +131,19 @@ mod tests {
     fn handles_initial_change_description() {
         let command = Command::ChangeDescription("hi".to_string());
 
-        assert_eq!(Task::handle_command(&None, command).wait(),
+        assert_eq!(Task::handle_command(&None, command),
                    Err(CommandError::NotYetCreated));
     }
 
     #[test]
     fn handles_initial_completed() {
-        assert_eq!(Task::handle_command(&None, Command::Complete).wait(),
+        assert_eq!(Task::handle_command(&None, Command::Complete),
                    Err(CommandError::NotYetCreated));
     }
 
     #[test]
     fn handles_initial_archive() {
-        assert_eq!(Task::handle_command(&None, Command::Archive).wait(),
+        assert_eq!(Task::handle_command(&None, Command::Archive),
                    Err(CommandError::NotYetCreated));
     }
 
@@ -156,7 +152,7 @@ mod tests {
         let state = State::new("hi".to_string(), Status::Active);
         let command = Command::Create("yoho".to_string());
 
-        assert_eq!(Task::handle_command(&Some(state), command).wait(),
+        assert_eq!(Task::handle_command(&Some(state), command),
                    Err(CommandError::AlreadyCreated));
     }
 
@@ -165,7 +161,7 @@ mod tests {
         let state = State::new("hi".to_string(), Status::Active);
         let command = Command::ChangeDescription("yoho".to_string());
 
-        assert_eq!(Task::handle_command(&Some(state), command).wait(),
+        assert_eq!(Task::handle_command(&Some(state), command),
                    Ok(vec![Event::DescriptionChanged { description: "yoho".to_string() }]));
     }
 
@@ -174,15 +170,14 @@ mod tests {
         let state = State::new("hi".to_string(), Status::Active);
         let command = Command::ChangeDescription("hi".to_string());
 
-        assert_eq!(Task::handle_command(&Some(state), command).wait(),
-                   Ok(vec![]));
+        assert_eq!(Task::handle_command(&Some(state), command), Ok(vec![]));
     }
 
     #[test]
     fn handles_complete_if_different() {
         let state = State::new("hi".to_string(), Status::Active);
 
-        assert_eq!(Task::handle_command(&Some(state), Command::Complete).wait(),
+        assert_eq!(Task::handle_command(&Some(state), Command::Complete),
                    Ok(vec![Event::Completed]));
     }
 
@@ -190,7 +185,7 @@ mod tests {
     fn ignores_complete_on_no_change() {
         let state = State::new("hi".to_string(), Status::Completed);
 
-        assert_eq!(Task::handle_command(&Some(state), Command::Complete).wait(),
+        assert_eq!(Task::handle_command(&Some(state), Command::Complete),
                    Ok(vec![]));
     }
 
@@ -198,7 +193,7 @@ mod tests {
     fn handles_archive_if_different() {
         let state = State::new("hi".to_string(), Status::Active);
 
-        assert_eq!(Task::handle_command(&Some(state), Command::Archive).wait(),
+        assert_eq!(Task::handle_command(&Some(state), Command::Archive),
                    Ok(vec![Event::Archived]));
     }
 
@@ -206,7 +201,7 @@ mod tests {
     fn ignores_archive_on_no_change() {
         let state = State::new("hi".to_string(), Status::Archived);
 
-        assert_eq!(Task::handle_command(&Some(state), Command::Archive).wait(),
+        assert_eq!(Task::handle_command(&Some(state), Command::Archive),
                    Ok(vec![]));
     }
 
