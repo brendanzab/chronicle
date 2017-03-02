@@ -31,14 +31,16 @@ pub trait EventStore {
     type EventStream: Stream<Item = PersistedEvent<Self::Offset, Self::SerializedEvent>>;
 
     /// Persist the events to the event store
-    fn persist_events<Events>(&self,
-                              stream_id: &Self::StreamId,
-                              stream_offset: Self::Offset,
-                              events: Events)
-        where Events: IntoIterator<Item = Self::SerializedEvent>;
+    fn persist_events(&self,
+                      stream_id: &Self::StreamId,
+                      stream_offset: Self::Offset,
+                      events: Vec<Self::SerializedEvent>);
 
     /// Read the events back from the event store
-    fn get_events(&self, stream_id: &Self::StreamId) -> Self::EventStream;
+    fn get_events(&self,
+                  stream_id: &Self::StreamId,
+                  stream_offset: Self::Offset)
+                  -> Self::EventStream;
 }
 
 pub trait SnapshotStore {}
