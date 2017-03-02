@@ -3,7 +3,7 @@ extern crate chronicle_commander;
 use chronicle_commander::Aggregate;
 
 pub struct State {
-    count: i64,
+    pub count: i64,
 }
 
 pub enum Event {
@@ -16,7 +16,7 @@ pub enum Command {
     Reset,
 }
 
-enum CommandError {
+pub enum CommandError {
     OutOfBounds,
 }
 
