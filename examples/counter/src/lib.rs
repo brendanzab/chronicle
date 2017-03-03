@@ -1,6 +1,6 @@
-extern crate chronicle_commander;
+extern crate chronicle_domain;
 
-use chronicle_commander::Aggregate;
+use chronicle_domain::Aggregate;
 
 pub struct State {
     pub count: i64,

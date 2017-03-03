@@ -1,4 +1,4 @@
-use chronicle_commander::Aggregate;
+use chronicle_domain::Aggregate;
 
 use super::Money;
 

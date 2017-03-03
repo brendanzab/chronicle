@@ -1,4 +1,4 @@
-use chronicle_commander::Aggregate;
+use chronicle_domain::Aggregate;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -115,7 +115,7 @@ impl Aggregate for Task {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chronicle_commander::Aggregate;
+    use chronicle_domain::Aggregate;
 
     // TODO: These tests are very reptitive - would property based testing help?
 

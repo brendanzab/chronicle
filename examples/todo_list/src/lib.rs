@@ -1,7 +1,7 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 
-extern crate chronicle_commander;
+extern crate chronicle_domain;
 extern crate chronicle_memory;
 extern crate futures;
 extern crate rocket;

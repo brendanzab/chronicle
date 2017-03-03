@@ -1,4 +1,3 @@
-extern crate chronicle_persistence;
 extern crate futures;
 
 use futures::IntoFuture;
