@@ -1,0 +1,11 @@
+[package]
+name = "chronicle_postgres"
+version = "0.1.0"
+authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
+
+[dependencies]
+chronicle_persistence = { version = "0.1.0", path = "../chronicle_persistence" }
+diesel = { version = "0.11.0", features = ["postgres", "uuid"] }
+diesel_codegen = { version = "0.11.0", features = ["postgres"] }
+futures = "0.1.10"
+uuid = { version = "0.4.0", features = ["serde", "v4"] }

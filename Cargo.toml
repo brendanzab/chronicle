@@ -1,17 +1,10 @@
-[package]
-name = "chronicle"
-version = "0.1.0"
-authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
-publish = false
-
 [workspace]
 members = [
-    "chronicle_persistence",
     "chronicle_domain",
     "chronicle_memory",
+    "chronicle_persistence",
+    "chronicle_postgres",
     "examples/bank",
     "examples/counter",
     "examples/todo_list",
 ]
-
-[dependencies]
