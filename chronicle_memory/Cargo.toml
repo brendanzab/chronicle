@@ -7,6 +7,7 @@ authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
 chashmap = "2.1.0"
 chronicle_persistence = { version = "0.1.0", path = "../chronicle_persistence" }
 futures = "0.1.10"
+uuid = { version = "0.4.0", features = ["serde", "v4"] }
 
 [dev-dependencies]
 lazy_static = "0.2.4"

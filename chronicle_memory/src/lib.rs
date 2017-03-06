@@ -8,6 +8,7 @@
 //! extern crate futures;
 //! #[macro_use]
 //! extern crate lazy_static;
+//! extern crate uuid;
 //!
 //!
 //! use chronicle_memory::MemoryEventStore;
@@ -21,13 +22,15 @@
 //! }
 //!
 //! fn main() {
-//!     use chronicle_persistence::{EventStore, SourceId};
+//!     use chronicle_persistence::EventStore;
 //!     use futures::{Future, Stream, future};
 //!     use std::thread;
+//!     use uuid::Uuid;
+//!
 //!
 //!     // Some unique source ids
-//!     let id_1 = SourceId::new_v4();
-//!     let id_2 = SourceId::new_v4();
+//!     let id_1 = Uuid::new_v4();
+//!     let id_2 = Uuid::new_v4();
 //!
 //!     // Some sample events
 //!     let events = vec![
@@ -76,13 +79,15 @@
 extern crate chashmap;
 extern crate chronicle_persistence;
 extern crate futures;
+extern crate uuid;
 
 
 use chashmap::CHashMap;
-use chronicle_persistence::{EventStore, PersistedEvent, SourceId};
+use chronicle_persistence::{EventStore, PersistedEvent};
 use futures::{Async, Poll, Stream};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use uuid::Uuid;
 
 
 /// An in-memory event store implementation that can be concurrently accessed
@@ -90,7 +95,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 pub struct MemoryEventStore<Event> {
     global_offset: Arc<AtomicUsize>,
     /// The stored events and their global offset number
-    persisted_events: CHashMap<SourceId, Vec<(usize, Event)>>,
+    persisted_events: CHashMap<Uuid, Vec<(usize, Event)>>,
 }
 
 
@@ -113,7 +118,7 @@ impl<Event> EventStore for MemoryEventStore<Event>
     type Event = Event;
     type EventsStream = EventsStream<Event>;
 
-    fn append_events(&self, source_id: SourceId, events: Vec<Event>) {
+    fn append_events(&self, source_id: Uuid, events: Vec<Event>) {
         if events.is_empty() {
             return;
         }
@@ -134,7 +139,7 @@ impl<Event> EventStore for MemoryEventStore<Event>
         });
     }
 
-    fn events(&self, source_id: SourceId, global_offset: Self::Offset) -> EventsStream<Event> {
+    fn events(&self, source_id: Uuid, global_offset: Self::Offset) -> EventsStream<Event> {
         EventsStream {
             source_id: source_id,
             source_offset: 0,
@@ -147,7 +152,7 @@ impl<Event> EventStore for MemoryEventStore<Event>
 
 /// A stream of events for a specified source id
 pub struct EventsStream<Event> {
-    source_id: SourceId,
+    source_id: Uuid,
     source_offset: usize,
     global_offset: usize,
     event_store: MemoryEventStore<Event>,
@@ -196,8 +201,9 @@ impl<Event> Stream for EventsStream<Event>
 
 #[cfg(test)]
 mod tests {
-    use chronicle_persistence::{EventStore, PersistedEvent, SourceId};
+    use chronicle_persistence::{EventStore, PersistedEvent};
     use futures::Future;
+    use uuid::Uuid;
 
     use super::*;
 
@@ -205,7 +211,7 @@ mod tests {
     #[test]
     fn append_events_if_none_exist_for_the_source_id() {
         let event_store = MemoryEventStore::new();
-        let source_id_1 = SourceId::new_v4();
+        let source_id_1 = Uuid::new_v4();
 
         event_store.append_events(source_id_1, vec!["A", "B", "C"]);
 
@@ -217,7 +223,7 @@ mod tests {
     #[test]
     fn append_events_for_an_existing_source_id() {
         let event_store = MemoryEventStore::new();
-        let source_id_1 = SourceId::new_v4();
+        let source_id_1 = Uuid::new_v4();
 
         event_store.append_events(source_id_1, vec!["A", "B", "C"]);
         event_store.append_events(source_id_1, vec![]);
@@ -231,8 +237,8 @@ mod tests {
     #[test]
     fn append_events_maintianing_the_global_offsets() {
         let event_store = MemoryEventStore::new();
-        let source_id_1 = SourceId::new_v4();
-        let source_id_2 = SourceId::new_v4();
+        let source_id_1 = Uuid::new_v4();
+        let source_id_2 = Uuid::new_v4();
 
         event_store.append_events(source_id_1, vec!["A", "B", "C"]);
         event_store.append_events(source_id_2, vec!["a", "b"]);
@@ -248,7 +254,7 @@ mod tests {
     #[test]
     fn events_on_empty_store() {
         let event_store = MemoryEventStore::<()>::new();
-        let source_id_1 = SourceId::new_v4();
+        let source_id_1 = Uuid::new_v4();
 
         let persisted_events = event_store.events(source_id_1, 0).collect().wait();
 
@@ -258,7 +264,7 @@ mod tests {
     #[test]
     fn events_on_non_empty_store() {
         let event_store = MemoryEventStore::new();
-        let source_id_1 = SourceId::new_v4();
+        let source_id_1 = Uuid::new_v4();
 
         event_store.append_events(source_id_1, vec!["A", "B", "C"]);
 
@@ -288,7 +294,7 @@ mod tests {
     #[test]
     fn events_with_out_of_range_offset() {
         let event_store = MemoryEventStore::new();
-        let source_id_1 = SourceId::new_v4();
+        let source_id_1 = Uuid::new_v4();
 
         event_store.append_events(source_id_1, vec!["A", "B", "C"]);
 
@@ -300,8 +306,8 @@ mod tests {
     #[test]
     fn events_with_non_contiguous_global_id_sequence() {
         let event_store = MemoryEventStore::new();
-        let source_id_1 = SourceId::new_v4();
-        let source_id_2 = SourceId::new_v4();
+        let source_id_1 = Uuid::new_v4();
+        let source_id_2 = Uuid::new_v4();
 
         event_store.append_events(source_id_1, vec!["A"]);
         event_store.append_events(source_id_2, vec!["1", "2"]);
@@ -345,8 +351,8 @@ mod tests {
     #[test]
     fn events_after_offset_id() {
         let event_store = MemoryEventStore::new();
-        let source_id_1 = SourceId::new_v4();
-        let source_id_2 = SourceId::new_v4();
+        let source_id_1 = Uuid::new_v4();
+        let source_id_2 = Uuid::new_v4();
 
         event_store.append_events(source_id_1, vec!["A", "B"]);
         event_store.append_events(source_id_2, vec!["1", "2", "3"]);

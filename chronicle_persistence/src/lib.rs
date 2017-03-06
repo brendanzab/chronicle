@@ -3,19 +3,16 @@ extern crate uuid;
 
 
 use futures::Stream;
-
-
-/// A serde-serializable uuid from the [uuid crate](https://docs.rs/uuid/)
-pub type SourceId = uuid::Uuid;
+use uuid::Uuid;
 
 
 /// An event with associated metadata that corresponds to how it was stored in
 /// the event store.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PersistedEvent<Offset, Event> {
-    /// The unique identifier of a source in the event store. This usually
-    /// points to a specific instance of an aggregate in DDD.
-    pub source_id: SourceId,
+    /// The unique identifier of a single source of events in the event store.
+    /// This usually corresponds to an 'aggregate id' in DDD.
+    pub source_id: Uuid,
     /// The global offset of the event in the event store
     pub global_offset: Offset,
     /// The offset within a single source
@@ -66,10 +63,10 @@ pub trait EventStore {
     type EventsStream: Stream<Item = PersistedEvent<Self::Offset, Self::Event>>;
 
     /// Append the events to the event store for the specified source id
-    fn append_events(&self, source_id: SourceId, events: Vec<Self::Event>);
+    fn append_events(&self, source_id: Uuid, events: Vec<Self::Event>);
 
     /// Stream the events back from the event store for the specified source id
-    fn events(&self, source_id: SourceId, global_offset: Self::Offset) -> Self::EventsStream;
+    fn events(&self, source_id: Uuid, global_offset: Self::Offset) -> Self::EventsStream;
 }
 
 
