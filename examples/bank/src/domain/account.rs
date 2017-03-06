@@ -1,4 +1,5 @@
 use chronicle_domain::Aggregate;
+use uuid::Uuid;
 
 use super::Money;
 
@@ -7,12 +8,12 @@ use super::Money;
 pub enum Event {
     AccountOpened { initial_balance: Money },
     MoneyDeposited {
-        transfer_id: String,
+        transfer_id: Uuid,
         amount: Money,
         balance: Money,
     },
     MoneyWithdrawn {
-        transfer_id: String,
+        transfer_id: Uuid,
         amount: Money,
         balance: Money,
     },
@@ -23,8 +24,8 @@ pub enum Event {
 #[derive(Debug, Clone)]
 pub enum Command {
     OpenAccount { initial_balance: Money },
-    DepositMoney { transfer_id: String, amount: Money },
-    WithdrawMoney { transfer_id: String, amount: Money },
+    DepositMoney { transfer_id: Uuid, amount: Money },
+    WithdrawMoney { transfer_id: Uuid, amount: Money },
     CloseAccount,
 }
 

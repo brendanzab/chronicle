@@ -1,15 +1,16 @@
 #![allow(unused_variables)]
 
-use rocket_contrib::JSON;
+use rocket_contrib::{JSON, UUID};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateTaskData {
-    pub description: String,
+    pub description: Uuid,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ChangeDescriptionData {
-    pub description: String,
+    pub description: Uuid,
 }
 
 #[post("/tasks", data = "<data>")]
@@ -18,16 +19,16 @@ pub fn open_account(data: JSON<CreateTaskData>) {
 }
 
 #[post("/tasks/<id>/change_description", data = "<data>")]
-pub fn deposit_money(id: &str, data: JSON<ChangeDescriptionData>) {
+pub fn deposit_money(id: UUID, data: JSON<ChangeDescriptionData>) {
     unimplemented!()
 }
 
 #[post("/tasks/<id>/complete")]
-pub fn complete(id: &str) {
+pub fn complete(id: UUID) {
     unimplemented!()
 }
 
 #[post("/tasks/<id>/archive")]
-pub fn archive(id: &str) {
+pub fn archive(id: UUID) {
     unimplemented!()
 }

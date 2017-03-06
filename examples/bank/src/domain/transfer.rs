@@ -1,4 +1,5 @@
 use chronicle_domain::Aggregate;
+use uuid::Uuid;
 
 use super::Money;
 
@@ -6,8 +7,8 @@ use super::Money;
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
     MoneyTransferRequested {
-        debit_account: String,
-        credit_account: String,
+        debit_account: Uuid,
+        credit_account: Uuid,
         amount: Money,
     },
 }
@@ -15,8 +16,8 @@ pub enum Event {
 #[derive(Debug, Clone)]
 pub enum Command {
     TransferMoney {
-        debit_account: String,
-        credit_account: String,
+        debit_account: Uuid,
+        credit_account: Uuid,
         amount: Money,
     },
 }
@@ -31,9 +32,9 @@ pub enum Status {
 
 #[derive(Debug, Clone)]
 pub struct State {
-    pub transfer_uuid: String,
-    pub debit_account: String,
-    pub credit_account: String,
+    pub transfer_uuid: Uuid,
+    pub debit_account: Uuid,
+    pub credit_account: Uuid,
     pub amount: Money,
     pub state: Status,
 }
