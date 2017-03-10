@@ -5,6 +5,7 @@ authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
 publish = false
 
 [dependencies]
+chronicle = { version = "0.1.0", path = "../../chronicle" }
 chronicle_domain = { version = "0.1.0", path = "../../chronicle_domain" }
 chronicle_memory = { version = "0.1.0", path = "../../chronicle_memory" }
 futures = "0.1.10"
