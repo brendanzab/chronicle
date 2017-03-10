@@ -3,8 +3,8 @@
 //! # Example
 //!
 //! ```rust
+//! extern crate chronicle;
 //! extern crate chronicle_memory;
-//! extern crate chronicle_persistence;
 //! extern crate futures;
 //! #[macro_use]
 //! extern crate lazy_static;
@@ -22,7 +22,7 @@
 //! }
 //!
 //! fn main() {
-//!     use chronicle_persistence::EventStore;
+//!     use chronicle::EventStore;
 //!     use futures::{Future, Stream, future};
 //!     use std::thread;
 //!     use uuid::Uuid;
@@ -77,13 +77,13 @@
 
 
 extern crate chashmap;
-extern crate chronicle_persistence;
+extern crate chronicle;
 extern crate futures;
 extern crate uuid;
 
 
 use chashmap::CHashMap;
-use chronicle_persistence::{EventStore, PersistedEvent};
+use chronicle::{EventStore, PersistedEvent};
 use futures::{Async, Poll, Stream};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -201,7 +201,7 @@ impl<Event> Stream for EventsStream<Event>
 
 #[cfg(test)]
 mod tests {
-    use chronicle_persistence::{EventStore, PersistedEvent};
+    use chronicle::{EventStore, PersistedEvent};
     use futures::Future;
     use uuid::Uuid;
 

@@ -1,8 +1,8 @@
 [workspace]
 members = [
+    "chronicle",
     "chronicle_domain",
     "chronicle_memory",
-    "chronicle_persistence",
     "chronicle_postgres",
     "examples/bank",
     "examples/counter",

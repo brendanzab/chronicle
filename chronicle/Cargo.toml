@@ -1,5 +1,5 @@
 [package]
-name = "chronicle_persistence"
+name = "chronicle"
 version = "0.1.0"
 authors = ["Brendan Zabarauskas <bjzaba@yahoo.com.au>"]
 
