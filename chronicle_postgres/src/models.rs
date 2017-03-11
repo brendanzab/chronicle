@@ -1,3 +1,4 @@
+use diesel::data_types::PgTimestamp;
 use uuid::Uuid;
 
 use schema::events;
@@ -18,4 +19,5 @@ pub struct Event {
     pub source_id: Uuid,
     pub sequence_number: i64,
     pub data: Vec<u8>,
+    pub created_at: PgTimestamp,
 }
