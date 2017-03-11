@@ -1,8 +1,8 @@
 table! {
-    events(source_id, source_sequence_number) {
-        global_sequence_number -> BigInt,
+    events(source_id, sequence_number) {
+        offset -> BigInt,
         source_id -> Uuid,
-        source_sequence_number -> BigInt,
+        sequence_number -> BigInt,
         data -> Binary,
     }
 }
