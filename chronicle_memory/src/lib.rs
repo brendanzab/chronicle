@@ -32,7 +32,7 @@
 //!     let id_1 = Uuid::new_v4();
 //!     let id_2 = Uuid::new_v4();
 //!
-//!     // Some sample events
+//!     // Some sample source id and payload pairs
 //!     let events = vec![
 //!         (id_1, vec!["1", "2", "3"]),
 //!         (id_1, vec!["4", "5"]),
@@ -41,7 +41,7 @@
 //!         (id_2, vec!["D", "E", "F"]),
 //!     ];
 //!
-//!     // The events partitioned by source id and sorted by value
+//!     // The event payloads partitioned by source id and sorted by value
 //!     let events_1 = vec!["1", "2", "3", "4", "5"];
 //!     let events_2 = vec!["A", "B", "C", "D", "E", "F"];
 //!
@@ -61,8 +61,8 @@
 //!     let events_stream_2 = EVENT_STORE.events(id_2, 0);
 //!
 //!     let (mut collected_events_1, mut collected_events_2) =
-//!         Future::join(events_stream_1.map(|pe| pe.event).collect(),
-//!                      events_stream_2.map(|pe| pe.event).collect()).wait().unwrap();
+//!         Future::join(events_stream_1.map(|e| e.payload).collect(),
+//!                      events_stream_2.map(|e| e.payload).collect()).wait().unwrap();
 //!
 //!     // We don't know the order that the events came in, so we need to
 //!     // ensure that they are all sorted first
@@ -94,8 +94,8 @@ use uuid::Uuid;
 #[derive(Debug, Clone)]
 pub struct MemoryEventStore<Event> {
     offset: Arc<AtomicUsize>,
-    /// The stored events and their global offset number
-    persisted_events: CHashMap<Uuid, Vec<(usize, Event)>>,
+    /// The stored event payloads and their global offset number
+    events: CHashMap<Uuid, Vec<(usize, Event)>>,
 }
 
 
@@ -104,7 +104,7 @@ impl<Event> MemoryEventStore<Event> {
     pub fn new() -> MemoryEventStore<Event> {
         MemoryEventStore {
             offset: Arc::new(AtomicUsize::new(0)),
-            persisted_events: CHashMap::new(),
+            events: CHashMap::new(),
         }
     }
 }
@@ -123,7 +123,7 @@ impl<Event> EventStore for MemoryEventStore<Event>
             return;
         }
 
-        self.persisted_events.alter(source_id, |existing_events| {
+        self.events.alter(source_id, |existing_events| {
             let mut existing_events = existing_events.unwrap_or(Vec::new());
             let new_events = events.into_iter().map(|event| {
                 // Keep the global offset up to date as we iterate. Opting
@@ -176,8 +176,8 @@ impl<Event> Stream for EventsStream<Event>
     fn poll(&mut self) -> Poll<Option<Self::Item>, EventsStreamError> {
         use chronicle::SequenceNumber;
 
-        if let Some(source_events) = self.event_store.persisted_events.get(&self.source_id) {
-            while let Some(&(offset, ref event)) = source_events.get(self.sequence_number) {
+        if let Some(source_events) = self.event_store.events.get(&self.source_id) {
+            while let Some(&(offset, ref payload)) = source_events.get(self.sequence_number) {
                 let sequence_number = self.sequence_number;
                 self.sequence_number += 1;
 
@@ -188,7 +188,7 @@ impl<Event> Stream for EventsStream<Event>
                         source_id: self.source_id,
                         offset: offset,
                         sequence_number: sequence_number as SequenceNumber,
-                        event: event.clone(),
+                        payload: payload.clone(),
                     };
 
                     return Ok(Async::Ready(Some(persisted_event)));
@@ -217,7 +217,7 @@ mod tests {
 
         event_store.append_events(source_id_1, vec!["A", "B", "C"]);
 
-        assert_eq!(event_store.persisted_events.get(&source_id_1).map(|es| es.clone()),
+        assert_eq!(event_store.events.get(&source_id_1).map(|es| es.clone()),
                    Some(vec![(0, "A"), (1, "B"), (2, "C")]));
     }
 
@@ -231,7 +231,7 @@ mod tests {
         event_store.append_events(source_id_1, vec![]);
         event_store.append_events(source_id_1, vec!["D", "E"]);
 
-        assert_eq!(event_store.persisted_events.get(&source_id_1).map(|es| es.clone()),
+        assert_eq!(event_store.events.get(&source_id_1).map(|es| es.clone()),
                    Some(vec![(0, "A"), (1, "B"), (2, "C"), (3, "D"), (4, "E")]));
     }
 
@@ -247,9 +247,9 @@ mod tests {
         event_store.append_events(source_id_1, vec!["D", "E"]);
         event_store.append_events(source_id_2, vec!["c", "d"]);
 
-        assert_eq!(event_store.persisted_events.get(&source_id_1).map(|es| es.clone()),
+        assert_eq!(event_store.events.get(&source_id_1).map(|es| es.clone()),
                    Some(vec![(0, "A"), (1, "B"), (2, "C"), (5, "D"), (6, "E")]));
-        assert_eq!(event_store.persisted_events.get(&source_id_2).map(|es| es.clone()),
+        assert_eq!(event_store.events.get(&source_id_2).map(|es| es.clone()),
                    Some(vec![(3, "a"), (4, "b"), (7, "c"), (8, "d")]));
     }
 
@@ -258,9 +258,9 @@ mod tests {
         let event_store = MemoryEventStore::<()>::new();
         let source_id_1 = Uuid::new_v4();
 
-        let persisted_events = event_store.events(source_id_1, 0).collect().wait();
+        let events = event_store.events(source_id_1, 0).collect().wait();
 
-        assert_eq!(persisted_events, Ok(Vec::new()));
+        assert_eq!(events, Ok(Vec::new()));
     }
 
     #[test]
@@ -270,26 +270,26 @@ mod tests {
 
         event_store.append_events(source_id_1, vec!["A", "B", "C"]);
 
-        let persisted_events = event_store.events(source_id_1, 0).collect().wait();
+        let events = event_store.events(source_id_1, 0).collect().wait();
 
-        assert_eq!(persisted_events,
+        assert_eq!(events,
                    Ok(vec![PersistedEvent {
                                offset: 0,
                                source_id: source_id_1,
                                sequence_number: 0,
-                               event: "A",
+                               payload: "A",
                            },
                            PersistedEvent {
                                offset: 1,
                                source_id: source_id_1,
                                sequence_number: 1,
-                               event: "B",
+                               payload: "B",
                            },
                            PersistedEvent {
                                offset: 2,
                                source_id: source_id_1,
                                sequence_number: 2,
-                               event: "C",
+                               payload: "C",
                            }]));
     }
 
@@ -300,9 +300,9 @@ mod tests {
 
         event_store.append_events(source_id_1, vec!["A", "B", "C"]);
 
-        let persisted_events = event_store.events(source_id_1, 100).collect().wait();
+        let events = event_store.events(source_id_1, 100).collect().wait();
 
-        assert_eq!(persisted_events, Ok(Vec::new()));
+        assert_eq!(events, Ok(Vec::new()));
     }
 
     #[test]
@@ -320,19 +320,19 @@ mod tests {
                                offset: 0,
                                source_id: source_id_1,
                                sequence_number: 0,
-                               event: "A",
+                               payload: "A",
                            },
                            PersistedEvent {
                                offset: 3,
                                source_id: source_id_1,
                                sequence_number: 1,
-                               event: "B",
+                               payload: "B",
                            },
                            PersistedEvent {
                                offset: 4,
                                source_id: source_id_1,
                                sequence_number: 2,
-                               event: "C",
+                               payload: "C",
                            }]));
 
         assert_eq!(event_store.events(source_id_2, 0).collect().wait(),
@@ -340,13 +340,13 @@ mod tests {
                                offset: 1,
                                source_id: source_id_2,
                                sequence_number: 0,
-                               event: "1",
+                               payload: "1",
                            },
                            PersistedEvent {
                                offset: 2,
                                source_id: source_id_2,
                                sequence_number: 1,
-                               event: "2",
+                               payload: "2",
                            }]));
     }
 
@@ -365,19 +365,19 @@ mod tests {
                                offset: 1,
                                source_id: source_id_1,
                                sequence_number: 1,
-                               event: "B",
+                               payload: "B",
                            },
                            PersistedEvent {
                                offset: 5,
                                source_id: source_id_1,
                                sequence_number: 2,
-                               event: "C",
+                               payload: "C",
                            },
                            PersistedEvent {
                                offset: 6,
                                source_id: source_id_1,
                                sequence_number: 3,
-                               event: "D",
+                               payload: "D",
                            }]));
 
         assert_eq!(event_store.events(source_id_1, 2).collect().wait(),
@@ -385,13 +385,13 @@ mod tests {
                                offset: 5,
                                source_id: source_id_1,
                                sequence_number: 2,
-                               event: "C",
+                               payload: "C",
                            },
                            PersistedEvent {
                                offset: 6,
                                source_id: source_id_1,
                                sequence_number: 3,
-                               event: "D",
+                               payload: "D",
                            }]));
 
         assert_eq!(event_store.events(source_id_1, 5).collect().wait(),
@@ -399,13 +399,13 @@ mod tests {
                                offset: 5,
                                source_id: source_id_1,
                                sequence_number: 2,
-                               event: "C",
+                               payload: "C",
                            },
                            PersistedEvent {
                                offset: 6,
                                source_id: source_id_1,
                                sequence_number: 3,
-                               event: "D",
+                               payload: "D",
                            }]));
 
         assert_eq!(event_store.events(source_id_1, 6).collect().wait(),
@@ -413,7 +413,7 @@ mod tests {
                                offset: 6,
                                source_id: source_id_1,
                                sequence_number: 3,
-                               event: "D",
+                               payload: "D",
                            }]));
     }
 }

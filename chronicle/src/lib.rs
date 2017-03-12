@@ -21,8 +21,8 @@ pub struct PersistedEvent<Offset, Event> {
     pub source_id: Uuid,
     /// The sequence number within a single source of events
     pub sequence_number: SequenceNumber,
-    /// The event that was stored by the client of the event store
-    pub event: Event,
+    /// The event payload that was stored by the client of the event store
+    pub payload: Event,
 }
 
 
@@ -35,7 +35,7 @@ impl<Offset, Event> PersistedEvent<Offset, Event> {
             offset: self.offset.clone(),
             source_id: self.source_id,
             sequence_number: self.sequence_number.clone(),
-            event: &self.event,
+            payload: &self.payload,
         }
     }
 
@@ -47,7 +47,7 @@ impl<Offset, Event> PersistedEvent<Offset, Event> {
             offset: self.offset,
             source_id: self.source_id,
             sequence_number: self.sequence_number,
-            event: f(self.event),
+            payload: f(self.payload),
         }
     }
 }
@@ -87,7 +87,7 @@ mod tests {
             offset: 123,
             source_id: Uuid::new_v4(),
             sequence_number: 354,
-            event: "hello",
+            payload: "hello",
         };
 
         let new_event = event.clone().map(String::from);
@@ -95,7 +95,7 @@ mod tests {
         assert_eq!(new_event.offset, event.offset);
         assert_eq!(new_event.source_id, event.source_id);
         assert_eq!(new_event.sequence_number, event.sequence_number);
-        assert_eq!(new_event.event, event.event);
+        assert_eq!(new_event.payload, event.payload);
     }
 
 
@@ -105,7 +105,7 @@ mod tests {
             offset: 123,
             source_id: Uuid::new_v4(),
             sequence_number: 354,
-            event: "hello",
+            payload: "hello",
         };
 
         let new_event = event.as_ref();
@@ -113,6 +113,6 @@ mod tests {
         assert_eq!(new_event.offset, event.offset);
         assert_eq!(new_event.source_id, event.source_id);
         assert_eq!(new_event.sequence_number, event.sequence_number);
-        assert_eq!(*new_event.event, event.event);
+        assert_eq!(*new_event.payload, event.payload);
     }
 }

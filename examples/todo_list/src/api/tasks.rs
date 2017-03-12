@@ -34,7 +34,7 @@ fn initial_state<E>(id: Uuid,
     event_store.events(id, 0)
         .map_err(cast_error::<E>)
         .fold(Task::initial_state(), |mut state, persisted_event| {
-            Task::apply_event(&mut state, persisted_event.event);
+            Task::apply_event(&mut state, persisted_event.payload);
             Ok(state)
         })
 }

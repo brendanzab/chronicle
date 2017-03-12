@@ -9,7 +9,7 @@ use schema::events;
 pub struct NewEvent<'a> {
     pub source_id: Uuid,
     pub sequence_number: i64,
-    pub data: &'a [u8],
+    pub payload: &'a [u8],
 }
 
 
@@ -18,6 +18,6 @@ pub struct Event {
     pub offset: i64,
     pub source_id: Uuid,
     pub sequence_number: i64,
-    pub data: Vec<u8>,
+    pub payload: Vec<u8>,
     pub created_at: PgTimestamp,
 }

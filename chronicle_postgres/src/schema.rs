@@ -3,7 +3,7 @@ table! {
         offset -> BigInt,
         source_id -> Uuid,
         sequence_number -> BigInt,
-        data -> Binary,
+        payload -> Binary,
         created_at -> Timestamp,
     }
 }
