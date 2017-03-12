@@ -58,7 +58,7 @@ pub trait EventStore {
     /// The type of the offests into the event store. Relational DBs
     /// will probably use a monotonically increasing sequence number,
     /// where as distributed data sources may use timestamps.
-    type Offset;
+    type Offset: PartialOrd;
 
     /// The event store's native serialized form
     type Event;
