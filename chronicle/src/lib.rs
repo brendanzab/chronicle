@@ -113,6 +113,6 @@ mod tests {
         assert_eq!(new_event.offset, event.offset);
         assert_eq!(new_event.source_id, event.source_id);
         assert_eq!(new_event.sequence_number, event.sequence_number);
-        assert_eq!(*new_event.payload, event.payload);
+        assert_eq!(new_event.payload, &event.payload);
     }
 }
