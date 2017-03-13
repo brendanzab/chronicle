@@ -1,6 +1,16 @@
+#![feature(conservative_impl_trait)]
+#![feature(never_type)]
+
+
 extern crate futures;
+extern crate uuid;
+
 
 use futures::IntoFuture;
+
+
+pub mod commands;
+
 
 /// An aggregate that is responsible for validating and applying
 /// commands.

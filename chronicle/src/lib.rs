@@ -27,7 +27,7 @@ pub struct PersistedEvent<Offset, Event> {
 
 
 impl<Offset, Event> PersistedEvent<Offset, Event> {
-    /// Take the event data by reference, cloning the source id and offsets
+    /// Take the event data by reference, copying the other fields
     pub fn as_ref(&self) -> PersistedEvent<Offset, &Event>
         where Offset: Clone
     {
@@ -39,7 +39,7 @@ impl<Offset, Event> PersistedEvent<Offset, Event> {
         }
     }
 
-    /// Apply a transformation to the event
+    /// Apply a transformation to the event payload, copying the other fields
     pub fn map<NewEvent, F>(self, f: F) -> PersistedEvent<Offset, NewEvent>
         where F: FnOnce(Event) -> NewEvent
     {

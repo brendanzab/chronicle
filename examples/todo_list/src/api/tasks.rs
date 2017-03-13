@@ -54,6 +54,11 @@ pub fn create(data: JSON<CreateTaskData>,
         .wait()
         .unwrap();
 
+    // sender.execute(id, command).then(|result| match result {
+    //     Ok(_) => JSON(json!({ "id": id })),
+    //     Err(_) => panic!(),
+    // });
+
     JSON(json!({
         "id": id,
     }))
