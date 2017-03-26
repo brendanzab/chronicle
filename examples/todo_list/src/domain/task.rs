@@ -62,28 +62,20 @@ impl Aggregate for Task {
         use self::Command::*;
         use self::Event::*;
 
-        match *state {
-            None => {
-                match command {
-                    Create(description) => Ok(vec![Created { description: description }]),
-                    _ => Err(CommandError::NotYetCreated),
-                }
+        if let Some(ref state) = *state {
+            match command {
+                Create(_) => Err(CommandError::AlreadyCreated),
+                ChangeDescription(ref d) if *d == state.description => Ok(vec![]),
+                ChangeDescription(d) => Ok(vec![DescriptionChanged { description: d }]),
+                Complete if state.status == Status::Completed => Ok(vec![]),
+                Complete => Ok(vec![Event::Completed]),
+                Archive if state.status == Status::Archived => Ok(vec![]),
+                Archive => Ok(vec![Event::Archived]),
             }
-            Some(ref state) => {
-                match command {
-                    Create(_) => Err(CommandError::AlreadyCreated),
-                    ChangeDescription(description) => {
-                        if description == state.description {
-                            Ok(vec![])
-                        } else {
-                            Ok(vec![DescriptionChanged { description: description }])
-                        }
-                    }
-                    Complete if state.status == Status::Completed => Ok(vec![]),
-                    Archive if state.status == Status::Archived => Ok(vec![]),
-                    Complete => Ok(vec![Event::Completed]),
-                    Archive => Ok(vec![Event::Archived]),
-                }
+        } else {
+            match command {
+                Create(description) => Ok(vec![Created { description: description }]),
+                _ => Err(CommandError::NotYetCreated),
             }
         }
     }
@@ -91,22 +83,17 @@ impl Aggregate for Task {
     fn apply_event(state: &mut Option<State>, event: Event) {
         use self::Event::*;
 
-        match *state {
-            None => {
-                match event {
-                    Created { description } => {
-                        *state = Some(State::new(description, Status::Active))
-                    }
-                    _ => (), // TODO: Log?
-                }
+        if let Some(ref mut state) = *state {
+            match event {
+                Created { .. } => (), // TODO: Log?
+                DescriptionChanged { description } => state.description = description,
+                Completed => state.status = Status::Completed,
+                Archived => state.status = Status::Archived,
             }
-            Some(ref mut state) => {
-                match event {
-                    Created { .. } => (), // TODO: Log?
-                    DescriptionChanged { description } => state.description = description,
-                    Completed => state.status = Status::Completed,
-                    Archived => state.status = Status::Archived,
-                }
+        } else {
+            match event {
+                Created { description } => *state = Some(State::new(description, Status::Active)),
+                _ => (), // TODO: Log?
             }
         }
     }
